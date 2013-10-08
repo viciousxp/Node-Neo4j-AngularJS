@@ -1,0 +1,61 @@
+.row
+    .col-lg-12
+        .div(ng-controller="LoginCtrl")
+            .well
+                div.btn-group
+                    label.btn.btn-primary
+                        input(type="radio", ng-model="loginSelection", value="register") 
+                        | Register
+                    label.btn.btn-primary
+                        input(type="radio", ng-model="loginSelection", value="login", selected)
+                        | Login
+                    label.btn.btn-primary
+                        input(type="radio", ng-model="loginSelection", value="forgotPassword")
+                        | Forgot Password
+                br
+                br
+                .animate-login-switch(ng-switch on="loginSelection")
+                    div(ng-switch-when="register")
+                        form(ng-submit="submitRegistration()", name="submitRegistration")
+                            .input-group.input-group-lg
+                                span.input-group-addon Username
+                                input(type="text", ng-model="user.username").form-control.input-lg
+                            br
+                            .input-group.input-group-lg
+                                span.input-group-addon Email
+                                input(type="text", ng-model="user.email").form-control.input-lg
+                            br
+                            .input-group.input-group-lg
+                                span.input-group-addon Password
+                                input(type="password", ng-model="user.password").form-control.input-lg
+                            br
+                            .input-group.input-group-lg
+                                span.input-group-addon Password Again
+                                input(type="password", ng-model="user.passwordVerification").form-control.input-lg
+                            br
+                            .btn-group
+                                input(type="submit").btn.btn-success Register
+                                button(type="button").btn.btn-danger Reset
+
+                    div(ng-switch-when="login")
+                        form(ng-submit="submitLogin()")
+                            .input-group.input-group-lg
+                                span.input-group-addon Username
+                                input(type="text", ng-model="username").form-control.input-lg
+                            br
+                            .input-group.input-group-lg
+                                span.input-group-addon Password
+                                input(type="password", ng-model="password").form-control.input-lg
+                            br
+                            .btn-group
+                                input(type="submit").btn.btn-success Login
+                                button(type="button").btn.btn-danger Reset
+
+                    div(ng-switch-when="forgotPassword")
+                        form(ng-submit="submitPasswordReset()")
+                            .input-group.input-group-lg
+                                span.input-group-addon Username
+                                input(type="text").form-control.input-lg
+                            br
+                            .btn-group
+                                input(type="submit").btn.btn-success Send Reset
