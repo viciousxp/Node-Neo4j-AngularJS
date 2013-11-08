@@ -152,4 +152,8 @@ Node.prototype.deleteIncomingRelationship = function(user, relType, callback) {
     });
 }
 
+Node.prototype.getData = function(callback) {
+    callback(null, this._node.data);
+}
+
 module.exports = Node;

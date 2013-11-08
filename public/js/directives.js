@@ -12,4 +12,8 @@ angular.module('myApp.directives', []).
 
 angular.module('myApp')
 .directive('LoginCtrl', [function() {
+}])
+.directive('ProfileCtrl', [function() {
+}])
+.directive('SearchCtrl', [function() {
 }]);

@@ -12,9 +12,8 @@ block body
         a.navbar-brand(href="/") Brand
       .collapse.navbar-collapse.navbar-ex1-collapse
         ul(ng-controller="TopMenuCtrl").nav.navbar-nav.navbar-right
-          //{{logout}}
           li.dropdown
-            a.dropdown-toggle(href="#", data-toggle="dropdown") {{menuOptions}} 
+            a.dropdown-toggle(href="/", data-toggle="dropdown") {{menuOptions}}
               b.caret
             ul.dropdown-menu
               li.dropdown(ng-repeat="item in listItems")

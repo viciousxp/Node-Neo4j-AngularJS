@@ -49,7 +49,6 @@ passport.serializeUser(function(user, done) {
 
 passport.deserializeUser(function(user, done) {
   database.getIndexedNodes('users', 'username', user.username, function (err, users) {
-    console.info('err=> ' + err);
     if (err) return next(err);
     user = new User(users[0]);
     done(err, user);
@@ -58,8 +57,6 @@ passport.deserializeUser(function(user, done) {
 
 passport.use(new LocalStrategy({ usernameField: 'username', passwordField: 'password'},
   function(username, password, done) {
-    console.info('username=> ' + username);
-    console.info('password=> ' + password);
     process.nextTick(function() {
       login.authenticate(username, password, function (error, user) {
         if (error) {
@@ -87,15 +84,15 @@ function ensureAuthenticated(req, res, next) {
 }
 
 function isSelf(req, res, next) {
-  user = req.user;
+  var user = req.user;
   if (user.username === req.params.id) req.isSelf = true;
   else req.isSelf = false;
   return next();
 }
 
 function ensureIsSelf(req, res, next) {
-  if (req.isSelf) res.send(200, {user: req.user.username});
-  else res.send(401);
+  if (req.isSelf) return next();
+  res.send(401);
 }
 
 
@@ -110,20 +107,35 @@ app.get('/partial/:name', routes.partial);
     ReST API
         *****/
 
-app.get('/api/name', api.name);
 app.get('/api/listMenu', api.listMenu);
 
 /*****
     Login Functions
         *****/
 app.post('/api/users/login', login.login);
-app.get('/api/users/status/:id', ensureAuthenticated, isSelf, ensureIsSelf);
+app.get('/api/users/status', ensureAuthenticated, login.userStatus);
 app.get('/api/users/logout', login.logout);
+app.post('/api/users/sendPasswordReset/:id', login.sendPasswordReset);
 app.post('/api/users/register', login.register);
+app.get('/api/users/getFollowing/:id', ensureAuthenticated, isSelf, login.getFollowing);
+app.get('/api/users/getFollowed/:id', ensureAuthenticated, isSelf, login.getFollowed);
+app.get('/api/users/getProfile', ensureAuthenticated, isSelf, login.getData)
+app.get('/api/users/search', ensureAuthenticated, api.search.search)
+app.post('/api/users/profile/:id', ensureAuthenticated, isSelf, ensureIsSelf, api.profile.update);
+app.get('/api/users/profile/:id', ensureAuthenticated, isSelf, api.profile.get);
+
+//Tags API
+app.get('/api/tags/:tagName', api.tags.list);
+app.post('/api/tags/:tagName', api.tags.tag);
+
+//Schema Server
+app.get('/api/utils/schema/:name', api.utils.getSchema);
 
 /*****
     Return Index for All Uncaught Routes
         *****/
+
+app.use(routes.index);
 
 //app.all('/*', routes.index);
 

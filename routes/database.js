@@ -58,21 +58,18 @@ database.queryBuilder = function (options, callback) {
         options.query = options.query.replace('~','').replace(' ','~ ');
     }
     if (options.partial) {
-        if (options.query.slice(-1) !== ' ') {
-            options.query = options.query.concat(' ');
-        }
-        options.query = options.query.replace('~','').replace('*','').replace(' ','* ');
+        if (/\s/g.test(options.query)) options.query = '"' + options.query + '"';
+        else options.query =  '*' + options.query.split('~').join('') + '*';
     }
     if (options.query == null) {
         query += '*';
     } else {
         query += options.query;
     }
-
-    console.info('query: ' + query);
+    console.log(options.index + "=" + query)
     db.queryNodeIndex(options.index, query, function(err, nodes) {
+        console.info('Err: ' + err);
         if (err) return callback(err)
         callback (null, nodes);
     });
-
 }

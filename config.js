@@ -6,7 +6,7 @@ exports.dev = {
   	"authPass" : "password"
   },
   "facebook" : {
-  	"clientID": '154475744759520',
-  	"clientSecret": '32c6c85c17e7801550e48829517a85ff'
+  	"clientID": 'clientID',
+  	"clientSecret": 'clientSecret'
   }
 };

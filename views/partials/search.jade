@@ -1,0 +1,12 @@
+.row
+    .col-lg-12
+        .div(ng-controller="SearchCtrl")
+            h1 Search
+            .well
+                |Search: 
+                input(type="text", name="search", ng-model="searchQuery", ng-change="searchInput()", required)
+            .well
+                h2 {{results}}
+                ul
+                    li(ng-repeat="user in users")
+                        a(href="/profile/{{user.username}}") {{user.username}}

@@ -12,17 +12,13 @@ angular.module('myApp')
 .factory('Auth', ['$rootScope', '$http', function($rootScope, $http) {
     return {
         status: function() {
-            if ($rootScope) {
-                $http.get('/api/users/status/' + $rootScope.username)
-                    .success(function(res) {
-                        console.log('STATUS=> ' + res);
-                        return $rootScope.username;
-                    })
-                    .error(error);
-            } else {
-                return {error: 401};
-            }
-
+            $http({method: 'GET', url: '/api/users/status'}).
+            success(function(data, status, headers, config) {
+                $rootScope.username = data;
+            }).
+            error(function(data, status, headers, config) {
+                $location.url('/login');      
+            })
         },
         register: function(user) {
             console.log('user=>' + user);
@@ -32,21 +28,25 @@ angular.module('myApp')
                 })
                 .error(error);
         },
-        login: function(user) {
+        login: function(user, callback) {
             console.log('user=>' + user);
             $http.post('/api/users/login', user)
                 .success(function(res) {
-                    console.log(res.user);
                     $rootScope.username = res.user;
+                    callback(null, $rootScope.username);
                 })
-                .error(error);
+                .error(function(res) {
+                    callback(res.err);
+                });
         },
-        sendPasswordReset: function(user) {
-            $http.post('/api/users/sendPasswordReset', user)
-                .success(function(res) {
-                success();
+        sendPasswordReset: function(user, callback) {
+            $http.post('/api/users/sendPasswordReset/' + user)
+                .success(function (res) {
+                    callback(null, res.msg);
                 })
-                .error(error);
+                .error(function (res) {
+                    callback(res.msg)
+                });
         }
     }
 }]);

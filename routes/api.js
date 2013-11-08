@@ -2,18 +2,25 @@
  * Serve JSON to our AngularJS client
  */
 
-exports.name = function (req, res) {
-    res.json({
-        name: 'Ramee'
-    });
-};
+exports.search = require('./api/search');
+exports.profile = require('./api/profile');
+exports.utils = require('./api/utils');
+exports.tags = require('./api/tags');
 
 exports.listMenu = function (req, res) {
-    res.json([
-        {"name": "Login", "link": "/login"},
-        {"name": "View 2", "link": "view2"},
-        {"name": "View 3", "link": "view3"},
-        {"name": "View 4", "link": "view4"},
-        {"name": "View 5", "link": "view5"}
-    ]);
+    var menu = '';
+    if (req.user) {
+        menu = [
+            {"name": "Home", "link": "/"},
+            {"name": "Profile", "link": "/profile/" + req.user.username},
+            {"name": "Search", "link": "/search"},
+            {"name": "Logout", "link": "/logout"}
+        ]
+    } else {
+        menu = [
+            {"name": "Home", "link": "/"},
+            {"name": "Login", "link": "/login"}
+        ];
+    }
+    res.send(200, menu);
 }

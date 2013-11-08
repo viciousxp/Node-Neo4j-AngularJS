@@ -2,6 +2,7 @@
     .col-lg-12
         .div(ng-controller="LoginCtrl")
             .well
+                div(ng-bind="error").alert
                 div.btn-group
                     label.btn.btn-primary
                         input(type="radio", ng-model="loginSelection", value="register") 
@@ -10,7 +11,7 @@
                         input(type="radio", ng-model="loginSelection", value="login", selected)
                         | Login
                     label.btn.btn-primary
-                        input(type="radio", ng-model="loginSelection", value="forgotPassword")
+                        input(type="radio", ng-model="loginSelection", value="passwordReset")
                         | Forgot Password
                 br
                 br
@@ -51,11 +52,11 @@
                                 input(type="submit").btn.btn-success Login
                                 button(type="button").btn.btn-danger Reset
 
-                    div(ng-switch-when="forgotPassword")
+                    div(ng-switch-when="passwordReset")
                         form(ng-submit="submitPasswordReset()")
                             .input-group.input-group-lg
                                 span.input-group-addon Username
-                                input(type="text").form-control.input-lg
+                                input(type="text", ng-model="username").form-control.input-lg
                             br
                             .btn-group
                                 input(type="submit").btn.btn-success Send Reset

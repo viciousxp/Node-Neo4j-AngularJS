@@ -79,6 +79,26 @@ Object.defineProperties(User.prototype, {
         },
         enumerable: true,
         configurable: true
+    },
+    profile: {
+        get: function () {
+            return this._node.data['profile'];
+        },
+        set: function (profile) {
+            this._node.data['profile'] = profile;
+        },
+        enumerable: true,
+        configurable: true
+    },
+    profileACL: {
+        get: function () {
+            return this._node.data['profileACL'];
+        },
+        set: function (profileACL) {
+            this._node.data['profileACL'] = profileACL;
+        },
+        enumerable: true,
+        configurable: true
     }
 });
 
