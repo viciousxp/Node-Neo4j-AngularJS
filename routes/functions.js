@@ -32,7 +32,3 @@ functions.sendEmail = function (userEmail, subject, message) {
         smtpTransport.close(); // shut down the connection pool, no more messages
     });
 }
-
-//functions.sendEmail = function (email, subject, message) {
-    //send email function
-//}

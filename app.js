@@ -116,7 +116,13 @@ app.post('/api/users/login', login.login);
 app.get('/api/users/status', ensureAuthenticated, login.userStatus);
 app.get('/api/users/logout', login.logout);
 app.post('/api/users/sendPasswordReset/:id', login.sendPasswordReset);
+app.post('/api/users/passwordReset/:id', login.resetPassword);
+app.get('/api/users/isEmailVerified/:id', ensureAuthenticated, isSelf, ensureIsSelf, login.isEmailVerified);
+app.post('/api/users/verifyEmail/:id', login.verifyEmail);
 app.post('/api/users/register', login.register);
+app.get('/api/users/following/:id', ensureAuthenticated, login.following)
+app.post('/api/users/follow/:id', ensureAuthenticated, login.follow);
+app.post('/api/users/unfollow/:id', ensureAuthenticated, login.unfollow);
 app.get('/api/users/getFollowing/:id', ensureAuthenticated, isSelf, login.getFollowing);
 app.get('/api/users/getFollowed/:id', ensureAuthenticated, isSelf, login.getFollowed);
 app.get('/api/users/getProfile', ensureAuthenticated, isSelf, login.getData)
@@ -133,11 +139,10 @@ app.get('/api/utils/schema/:name', api.utils.getSchema);
 
 /*****
     Return Index for All Uncaught Routes
+    This will enable deep linking in the Angular webapp
         *****/
 
 app.use(routes.index);
-
-//app.all('/*', routes.index);
 
 /*****
     Start Server

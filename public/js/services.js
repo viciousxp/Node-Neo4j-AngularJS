@@ -20,16 +20,40 @@ angular.module('myApp')
                 $location.url('/login');      
             })
         },
-        register: function(user) {
-            console.log('user=>' + user);
+        emailVerificationRequired: function(user, callback) {
+            $http({method: 'GET', url: '/api/users/isEmailVerified/' + user}).
+            success(function(data, status, headers, config) {
+                if (!data.result) callback('Please verify your email');
+                else callback(null, true);
+            }).
+            error(function(data, status, headers, config) {
+                callback('Server Error')
+            })
+        },
+        verifyEmail: function (user, token, callback) {
+            $http.post('/api/users/verifyEmail/' + user, {token: token}).
+            success(function(data, status, headers, config) {
+                if (!data.result) {
+                    if (data.msg) callback(data.msg);
+                    else callback('Token is incorrect or expired');
+                }
+                else callback(null, true);
+            }).
+            error(function(data, status, headers, config) {
+                callback(data.msg)
+            })
+        },
+        register: function(user, callback) {
             $http.post('/api/users/register', user)
                 .success(function(res) {
-                success();
+                    $rootScope.username = res.user;
+                    callback(null, $rootScope.username);
                 })
-                .error(error);
+                .error(function(res) {
+                    callback(res.err);
+                });
         },
         login: function(user, callback) {
-            console.log('user=>' + user);
             $http.post('/api/users/login', user)
                 .success(function(res) {
                     $rootScope.username = res.user;
@@ -41,6 +65,15 @@ angular.module('myApp')
         },
         sendPasswordReset: function(user, callback) {
             $http.post('/api/users/sendPasswordReset/' + user)
+                .success(function (res) {
+                    callback(null, res.msg);
+                })
+                .error(function (res) {
+                    callback(res.msg)
+                });
+        },
+        passwordReset: function(password, user, token, callback) {
+            $http.post('/api/users/passwordReset/' + user, {password: password, token: token})
                 .success(function (res) {
                     callback(null, res.msg);
                 })

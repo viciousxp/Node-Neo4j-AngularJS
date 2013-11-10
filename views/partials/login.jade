@@ -17,22 +17,22 @@
                 br
                 .animate-login-switch(ng-switch on="loginSelection")
                     div(ng-switch-when="register")
-                        form(ng-submit="submitRegistration()", name="submitRegistration")
+                        form(ng-submit="submitRegistration()")
                             .input-group.input-group-lg
                                 span.input-group-addon Username
-                                input(type="text", ng-model="user.username").form-control.input-lg
+                                input(type="text", ng-model="username").form-control.input-lg
                             br
                             .input-group.input-group-lg
                                 span.input-group-addon Email
-                                input(type="text", ng-model="user.email").form-control.input-lg
+                                input(type="text", ng-model="email").form-control.input-lg
                             br
                             .input-group.input-group-lg
                                 span.input-group-addon Password
-                                input(type="password", ng-model="user.password").form-control.input-lg
+                                input(type="password", ng-model="password").form-control.input-lg
                             br
                             .input-group.input-group-lg
                                 span.input-group-addon Password Again
-                                input(type="password", ng-model="user.passwordVerification").form-control.input-lg
+                                input(type="password", ng-model="passwordRepeat").form-control.input-lg
                             br
                             .btn-group
                                 input(type="submit").btn.btn-success Register
@@ -53,10 +53,23 @@
                                 button(type="button").btn.btn-danger Reset
 
                     div(ng-switch-when="passwordReset")
-                        form(ng-submit="submitPasswordReset()")
-                            .input-group.input-group-lg
-                                span.input-group-addon Username
-                                input(type="text", ng-model="username").form-control.input-lg
-                            br
-                            .btn-group
-                                input(type="submit").btn.btn-success Send Reset
+                        row(ng-if="passwordReset")
+                            form(ng-submit="submitNewPassword()")
+                                .input-group.input-group-lg
+                                    span.input-group-addon Enter new password
+                                    input(type="password", ng-model="password").form-control.input-lg
+                                br
+                                .input-group.input-group-lg
+                                    span.input-group-addon Re-enter new password
+                                    input(type="password", ng-model="passwordRepeat").form-control.input-lg
+                                br
+                                .btn-group
+                                    input(type="submit").btn.btn-success Send Reset
+                        row(ng-if="!passwordReset")    
+                            form(ng-submit="submitPasswordReset()")
+                                .input-group.input-group-lg
+                                    span.input-group-addon Username
+                                    input(type="text", ng-model="username").form-control.input-lg
+                                br
+                                .btn-group
+                                    input(type="submit").btn.btn-success Send Reset

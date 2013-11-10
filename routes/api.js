@@ -19,7 +19,8 @@ exports.listMenu = function (req, res) {
     } else {
         menu = [
             {"name": "Home", "link": "/"},
-            {"name": "Login", "link": "/login"}
+            {"name": "Register", "link": "/login/register"},
+            {"name": "Login", "link": "/login/login"}
         ];
     }
     res.send(200, menu);

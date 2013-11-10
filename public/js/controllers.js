@@ -8,13 +8,37 @@ function AppCtrl($scope, $http) {
 
 angular.module('myApp')
 .controller('LoginCtrl', ['$scope', '$location', '$routeParams', 'Auth', function($scope, $location, $routeParams, Auth) {
-    if ($routeParams.action === 'login') $scope.loginSelection = 'login';
+    $scope.loginSelection = 'login';
     if ($routeParams.action === 'register') $scope.loginSelection = 'register';
-    if ($routeParams.action === 'passwordReset') $scope.loginSelection = 'passwordReset';
+    if ($routeParams.action === 'passwordReset') {
+      $scope.loginSelection = 'passwordReset';
+      if (!angular.isUndefined($routeParams.user) && !angular.isUndefined($routeParams.token)) $scope.passwordReset = true;
+    }
+    if ($routeParams.action === 'emailVerification') {
+      if (!angular.isUndefined($routeParams.user) && !angular.isUndefined($routeParams.token)) {
+        Auth.verifyEmail($routeParams.user, $routeParams.token, function (err, result) {
+          if (err) $scope.error = err;
+          if (result) {
+            $scope.loginSelection = 'login';
+            $scope.error = 'Thank you for verifying your email, please login';
+          }
+        });
+      }
+    }
     $scope.submitRegistration = function() {
-        var user = this.user;
-        console.log('user-> ' + user);
-        Auth.register(user);
+        if (this.password === this.passwordRepeat) {
+          var user = {
+            username: this.username,
+            email: this.email,
+            password: this.password
+          }
+          Auth.register(user, function (err) {
+            if (err) $scope.error = err;
+            else $location.path('/profile/' + user.username);
+          });
+        } else {
+          $scope.error = 'Passwords do not match';
+        }
     }
     $scope.submitLogin = function() {
         var user = {
@@ -23,6 +47,7 @@ angular.module('myApp')
         };
         Auth.login(user, function(err, user) {
           if (err) $scope.error = err;
+          console.info(user)
           if (user) $location.path('/profile/' + user);
         });
     }
@@ -32,16 +57,44 @@ angular.module('myApp')
           else $scope.error = msg;
         });
     }
+    $scope.submitNewPassword = function() {
+      if (this.password === this.passwordRepeat) Auth.passwordReset(this.password, $routeParams.user, $routeParams.token, function(err, data) {
+        if (err) $scope.error = err;
+        else {
+          $scope.loginSelection = 'login';
+          $scope.error = data;
+        }
+      });
+    }
 }])
 .controller('ProfileCtrl', ['$rootScope', '$scope', '$routeParams', '$http', 'Auth', function($rootScope, $scope, $routeParams, $http, Auth) {
     if (typeof($routeParams.user) === 'undefined') return $location.path('/');
     var username = $routeParams.user;
     $scope.username = username;
     $scope.isOwnUser = false;
+    $scope.showFollowButton = true;
     if (username === $rootScope.username) {
       $scope.searchUsers = '<h3><a href="/search">Search for more users to follow!</a></h3>';
       $scope.isOwnUser = true;
+      $scope.showFollowButton = false;
+      Auth.emailVerificationRequired(username ,function (err, result) {
+        if (err) {
+          $scope.emailVerificationRequired = true;
+          $scope.emailMsg = err;
+        } else {
+          $scope.emailVerificationRequired = false;
+        }
+      });
     }
+    $http({method: 'GET', url: '/api/users/following/' + username}).
+    success(function(data, status, headers, config) {
+      if (data.result) $scope.followButton = 'Unfollow';
+      else $scope.followButton = 'Follow';
+    }).
+    error(function(data, status, headers, config) {
+      $scope.showFollowButton = false;
+    })
+
     $http({method: 'GET', url: '/api/users/getFollowing/' + username}).
     success(function(data, status, headers, config) {
       var userMsg = (username === $rootScope.username) ? 'You are ' : username + ' is ';
@@ -84,6 +137,19 @@ angular.module('myApp')
       $scope.infoCats = 'An error has occured';
     })
 
+    $scope.followUnfollow = function() {
+      if ($scope.followButton === 'Follow') {
+        $http.post('/api/users/follow/' + username).
+        success(function(data, status, headers, config) {
+          $scope.followButton = 'Unfollow';
+        })
+      } else if ($scope.followButton === 'Unfollow') {
+        $http.post('/api/users/unfollow/' + username).
+        success(function(data, status, headers, config) {
+          $scope.followButton = 'Follow';
+        })
+      }
+    }
     $scope.updateUserInfo = function(data) {
       return $http.post('/api/users/profile/' + username, {scope: this.infoCat[0], field: this.info.field, value: data, data: 'info'});
     };

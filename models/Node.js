@@ -135,6 +135,25 @@ Node.prototype.addRelationship = function (other, relType, properties, callback)
 Node.prototype.deleteIncomingRelationship = function(user, relType, callback) {
     var query = [
         'START user=node({thisId}), other=node({userId})',
+        'MATCH (user) <-[rel?:FOLLOWS_REL]- (other)',
+        'DELETE rel'
+    ].join('\n')
+        .replace('FOLLOWS_REL', relType);
+
+    var params = {
+        thisId: this.id,
+        userId: user.id
+    };
+
+    db.query(query, params, function (err, results) {
+        if (err) return callback(err);
+        callback(null);
+    });
+}
+
+Node.prototype.deleteOutgoingRelationship = function(user, relType, callback) {
+    var query = [
+        'START user=node({thisId}), other=node({userId})',
         'MATCH (user) -[rel?:FOLLOWS_REL]-> (other)',
         'DELETE rel'
     ].join('\n')
@@ -147,7 +166,6 @@ Node.prototype.deleteIncomingRelationship = function(user, relType, callback) {
 
     db.query(query, params, function (err, results) {
         if (err) return callback(err);
-        //var rel = results[0] && results[0]['rel'];
         callback(null);
     });
 }

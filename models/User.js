@@ -105,8 +105,9 @@ Object.defineProperties(User.prototype, {
 //User.prototype = Node.prototype;
 
 User.prototype.verifyEmail = function() {
+    console.log('sending email?')
     var message = "<h2>Hello, thank you for signing up, please click the link bellow to verify your email</h2>";
-        message +=   '<a href="http://192.168.0.104:3000/emailVerification/' + this._node.data.username + '/' + this._node.data.emailVerification + '">Click Here</a>';
+        message +=   '<a href="http://192.168.0.104:3000/login/emailVerification/' + this._node.data.username + '?token=' + this._node.data.emailVerification + '">Click Here</a>';
     functions.sendEmail(this._node.data.email, 'Email Verifivation', message);
 }
 
@@ -117,13 +118,24 @@ User.prototype.verifyEmailCode = function(vCode) {
 
 User.prototype.sendPasswordReset = function() {
     var message = "<h2>Click on the link to reset your password</h2>";
-        message +=   '<a href="http://192.168.0.104:3000/passwordReset/' + this._node.data.username + '/' + this._node.data.passwordReset + '">Reset Email</a>';
+        message +=   '<a href="http://192.168.0.104:3000/login/passwordReset/' + this._node.data.username + '?token=' + this._node.data.passwordReset + '">Reset Email</a>';
     functions.sendEmail(this._node.data.email, 'Password Reset', message);
 }
 
 User.prototype.verifyPasswordResetCode = function(vCode) {
     if (this._node.data.passwordReset === vCode) return true;
     return false;
+}
+
+User.prototype.following = function(user, callback) {
+    this.getOutgoingRelationships('follows', function(err, nodes) {
+        if (err) return callback(err);
+        for (var i = 0; i < nodes.length; i++) {
+            var followingUser = new User(nodes[i]['nodes']);
+            if (followingUser.username === user) return callback(null, true);
+        }
+        callback(null, false);
+    })
 }
 
 //temp method, will be replaced when new neo4j connector is ready

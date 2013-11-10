@@ -1,7 +1,13 @@
 var passport = require('passport')
   , User = require('../models/User')
   , database = require('./database')
-  , crypto = require('crypto');
+  , functions = require('./functions')
+  , crypto = require('crypto')
+  , config = require('../config.js')
+  , neo4j = require('neo4j')
+  , db = new neo4j.GraphDatabase(process.env.NEO4J_URL || config.dev.NEO4J_URL || 'http://localhost:7474')
+  , http = require('http')
+  , req = http.IncomingMessage.prototype;
 
 
 exports.logout = function(req, res) {
@@ -45,21 +51,60 @@ exports.userStatus = function(req, res) {
 }
 
 exports.register = function (req, res, next) {
-    var emailVerification = crypto.randomBytes(32).toString('hex');
-    loginOps.create({
-        username: req.body['username'],
-        email: req.body['email'],
-        password: req.body['password'],
-        emailVerification: emailVerification,
-        verified: false
-    }, function (err, user) {
-        if (err) return next(err);
-        req._forceLogIn(user, function(err) {
-            if (err) return next(err);
-            res.redirect('/users/' + user.username);
-        })
+    var emailVerification = crypto.randomBytes(32).toString('hex'),
+        password = crypto.createHash('sha1').update(req.body.password).digest('hex'),
+        data = {
+            username: req.body.username,
+            email: req.body.email,
+            password: password,
+            emailVerification: emailVerification,
+            verified: false
+        },
+        node = db.createNode(data);
+
+    database.getIndexedNodes('users', 'username', data.username, function(err, returnedNode) {
+        if (err) return res.send(500, {err: 'Server Error'});
+        else if (returnedNode.length > 0) return res.send(409, {err: 'User Exists'});
+        node.save(function (err) {
+            if (err) return res.send(500, {err: 'Server Error'});
+            node.index('users', 'username', data.username, function (err) {
+                if (err) res.send(500, {err: 'Server Error'});
+                req._forceLogIn(data, function(err) {
+                    if (err) res.send(500, {err: 'Server Error: Could not log you in automatically, please login manually'});
+                    var user = new User(node)
+                    user.verifyEmail();
+                    res.send(201, {msg: 'Registration successful'})
+                })
+            });
+        });
     });
 };
+
+exports.isEmailVerified = function(req, res) {
+  var user = req.user;
+  if (user.verified !== true) return res.send(200, {result: false});
+  res.send(200, {result: true});
+}
+
+exports.verifyEmail = function(req, res) {
+  database.getIndexedNodes('users', 'username', req.params.id, function (err, nodes) {
+    if (err) return res.send(500, {msg: err, result: false});
+    if (nodes.length === 0) return res.send(500, {msg: 'User not found', result: false});
+    var user = new User(nodes[0]);
+    console.log(JSON.stringify(req.body))
+    console.log(user.emailVerification)
+    if (req.body.token === user.emailVerification) {
+      if (user.verified === true) return res.send(200, {msg: 'You have already verified your email', result: false});
+      user.verified = true
+      user.save(function (err) {
+          if (err) return res.send(500, {err: 'Server Error'});
+          res.send(200, {result: true});
+      });
+    } else {
+      res.send(200, {result: false});
+    }
+  });
+}
 
 exports.authenticate = function (username, password, callback) {
   database.getIndexedNodes('users', 'username', username, function (err, nodes) {
@@ -79,6 +124,40 @@ exports.authenticate = function (username, password, callback) {
   });
 };
 
+exports.following = function(req, res) {
+  var user = req.user;
+  user.following(req.params.id, function(err, result) {
+    if (err) return res.send(500, {msg: err});
+    else res.send(200, {result: result});
+  });
+}
+
+exports.follow = function(req, res) {
+  var user = req.user;
+  database.getIndexedNodes('users', 'username', req.params.id, function (err, nodes) {
+      if (err) return res.send(500, {msg: err});
+      if (nodes.length === 0) return res.send(404, {msg: 'User not found'});
+      otherUser = new User(nodes[0]);
+      user.addRelationship(otherUser, 'follows', {}, function (err, rel) {
+        if (err) return res.send(500, {msg: err});
+        res.send(200);
+      })
+  });
+}
+
+exports.unfollow = function(req, res) {
+  var user = req.user;
+  database.getIndexedNodes('users', 'username', req.params.id, function (err, nodes) {
+      if (err) return res.send(500, {msg: err});
+      if (nodes.length === 0) return res.send(404, {msg: 'User not found'});
+      otherUser = new User(nodes[0]);
+      user.deleteOutgoingRelationship(otherUser, 'follows', function (err, rel) {
+        if (err) return res.send(500, {msg: err});
+        res.send(200);
+      })
+  });
+}
+
 exports.getFollowing = function(req, res) {
   var user;
   if (!req.isSelf) {
@@ -96,6 +175,31 @@ exports.getFollowing = function(req, res) {
   function fetchRelationships(user) {
     //async func required otherwise if !req.isSelf we will require the user before we fetch new
     //user from DB.
+    user.getOutgoingRelationships('follows', function(err, nodes) {
+      if (err) return res.send(500, {msg: 'Server Error'});
+      users = nodes.map(function (node) {
+          var user = new User(node['nodes']);
+          return {'username': user.username};
+      });   
+      res.json(users);
+    })
+  }
+}
+
+exports.getFollowed = function(req, res) {
+  var user;
+  if (!req.isSelf) {
+    database.getIndexedNodes('users', 'username', req.params.id, function (err, nodes) {
+        if (err) return res.send(500, err);
+        if (nodes.length === 0) return res.send(404, 'User not found');
+        user = new User(nodes[0]);
+        fetchRelationships(user);
+    });
+  } else {
+    user = req.user;
+    fetchRelationships(user);
+  }
+  function fetchRelationships(user) {
     user.getIncomingRelationships('follows', function(err, nodes) {
       if (err) return res.send(500, {msg: 'Server Error'});
       users = nodes.map(function (node) {
@@ -122,29 +226,22 @@ exports.sendPasswordReset = function(req, res) {
     });
 }
 
-exports.getFollowed = function(req, res) {
-  var user;
-  if (!req.isSelf) {
+exports.resetPassword = function(req, res) {
     database.getIndexedNodes('users', 'username', req.params.id, function (err, nodes) {
         if (err) return res.send(500, err);
         if (nodes.length === 0) return res.send(404, 'User not found');
         user = new User(nodes[0]);
-        fetchRelationships(user);
+        if (req.body.token === user.passwordReset) {
+            var password = crypto.createHash('sha1').update(req.body.password).digest('hex');
+            user.password = password;
+            user.save(function (err) {
+                if (err) return res.send(500, {msg: 'Server Error'});
+                res.send(200, {msg: 'Password reset, please login'});
+            });
+        } else {
+          res.send(401, {msg: 'Unauthorized password reset request or invalid token'});
+        }
     });
-  } else {
-    user = req.user;
-    fetchRelationships(user);
-  }
-  function fetchRelationships(user) {
-    user.getOutgoingRelationships('follows', function(err, nodes) {
-      if (err) return res.send(500, {msg: 'Server Error'});
-      users = nodes.map(function (node) {
-          var user = new User(node['nodes']);
-          return {'username': user.username};
-      });   
-      res.json(users);
-    })
-  }
 }
 
 exports.getData = function(req, res) {
@@ -154,4 +251,31 @@ exports.getData = function(req, res) {
     //res.send(200, data);
     console.log(JSON.stringify(data));
   });
+}
+
+//override for req.login in passport to avoid hitting the database in situations
+//where we want to login the user without asking for their password or in situations
+//where we want to login the user but neo4j's index has not been updated yet.
+req._forceLogIn = function(user, options, done) {
+  if (!this._passport) throw new Error('passport.initialize() middleware not in use');
+  
+  if (!done && typeof options === 'function') {
+    done = options;
+    options = {};
+  }
+  options = options || {};
+  var property = this._passport.instance._userProperty || 'user';
+  var session = (options.session === undefined) ? true : options.session;
+  
+  this[property] = user;
+  if (session) {
+    var self = this;
+    var obj = {};
+    obj.username = user.username;
+    obj.password = user.password;
+    self._passport.session.user = obj;
+    done();
+  } else {
+    done && done();
+  }
 }
