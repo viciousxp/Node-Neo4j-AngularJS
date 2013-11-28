@@ -3,6 +3,8 @@
 
 // dependencies
 var config = require('../config.js')
+  , Feed = require('../lib/feeds-api/models/Feed.js')
+  , User = require('../lib/users-api/models/User.js')
   , neo4j = require('neo4j')
   , db = new neo4j.GraphDatabase(process.env.NEO4J_URL || config.dev.NEO4J_URL || 'http://localhost:7474');
 
@@ -71,5 +73,37 @@ database.queryBuilder = function (options, callback) {
         console.info('Err: ' + err);
         if (err) return callback(err)
         callback (null, nodes);
+    });
+}
+
+database.listPublicFeeds = function (user, offset, limit, orderBy, callback) {
+    console.log('listFeeds');
+    var orderBy = (orderBy !== null) ? 'ORDER BY ' + orderBy : '';
+    var query = [
+        'START feeds = node(*)',
+        'MATCH feeds <-[:has_feed]- user',
+        'WHERE HAS(feeds.public) AND feeds.public = true',
+        'RETURN feeds, user',
+        'ORDERBY',
+        'SKIP OFFSET_VALUE',
+        'LIMIT LIMIT_VALUE'
+    ].join('\n')
+        .replace('ORDERBY', orderBy)
+        .replace('OFFSET_VALUE', offset)
+        .replace('LIMIT_VALUE', limit);
+
+    db.query(query, {}, function (err, results) {
+        console.log('new err: ' + err)
+        if (err) return callback(err);
+        var feeds = [];
+        for (var i = 0; i < results.length; i++) {
+            var feed = new Feed(results[i]['feeds']),
+                feedOwner = new User(results[i]['user']);
+            if ((typeof feed.public !== 'undefined' && feed.public === true) ||
+                (user && user.username === feedOwner.username)) {
+                feeds.push({feed: feed, owner: feedOwner});
+            }
+        }
+        callback(null, feeds);
     });
 }

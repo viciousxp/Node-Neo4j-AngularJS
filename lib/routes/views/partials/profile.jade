@@ -1,0 +1,55 @@
+div.row
+    div.col-lg-12
+        div(ng-controller="ProfileCtrl")
+            h1 {{username}}
+            button(ng-if="(showFollowButton)", ng-click="followUnfollow()") {{followButton}}
+            span(ng-if="(emailVerificationRequired)") {{emailMsg}}
+            row(ng-if="(infoCats.length > 0) ? true : false")
+                div(class="well col-lg-{{12/infoCats.length}}", ng-repeat="infoCat in infoCats")
+                    h2 {{infoCat[0]}}
+                    ul(ng-repeat="info in infoCat[1]")
+                        li
+                            span {{info.field + ' : '}}
+                            span(editable-text="info.value", buttons="no", blur="submit", onbeforesave="updateUserInfo($data)", e-required, e-placeholder="Enter {{info.field}}") {{info.value || '*Required: Please Enter ' + info.field}}
+                            div(ng-if="(isOwnUser)")
+                                span(editable-checkbox="info.public", buttons="no", blur="submit", onbeforesave="updateUserAcl($data)", e-title="Make Public?") {{ info.public && "Public" || "Private" }}
+            row
+                .well
+                    h2 {{following}}
+                    ul
+                        li(ng-repeat="user in followingUsers")
+                            a(href="/{{user.username}}/profile") {{user.username}}
+                    div(ng-bind-html="searchUsers")
+                .well
+                    h2 {{followed}}
+                    ul
+                        li(ng-repeat="user in followedUsers")
+                            a(href="/{{user.username}}/profile") {{user.username}}
+            row
+                div(ng-if="(isOwnUser)").col-xs-2
+                    div.thumbnail
+                        form(ng-submit="submitNewFeed()")
+                            div.caption
+                                h3 Add New Feed!
+                                p
+                                    div.form-group
+                                        label(for="newFeedName") Feed Name
+                                        input(type="text", class="form-control", id="newFeedName", placeholder="Feed Name", ng-model="feedName")
+                                    br
+                                    div.checkbox
+                                        label Make Private?
+                                            input(type="checkbox", ng-model="private")
+                                    br
+                                    .btn-group
+                                        input(type="submit").btn.btn-success Submit
+                div(ng-repeat="feed in feeds").col-xs-2
+                    div.thumbnail
+                        img(src="http://placehold.it/300x200", alt="...")
+                        div.caption
+                            h3 
+                                a(href="/{{username}}/feeds/{{feed.name}}") {{feed.name}}
+                            h3(ng-if="(feed.tags > 0) ? true : false") Tags
+                                a(href="#", ng-repeat="tag in feed.tags") {{tag.name}}
+                            p
+                                button(role="button", ng-if="(isOwnUser)").btn.btn-primary Edit
+                                button(role="button", ng-if="(isOwnUser)", ng-click="deleteFeed(feed)").btn.btn-default Delete

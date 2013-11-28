@@ -77,7 +77,7 @@ Node.prototype.getRelationships = function(relType, callback) {
         .replace('RELATIONSHIP', relType);
 
     var params = {
-        id: this.id,
+        id: this.id
     };
 
     db.query(incomingQuery, params, function (err, incoming) {

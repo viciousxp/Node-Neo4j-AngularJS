@@ -1,0 +1,52 @@
+div.row
+    div.col-lg-12
+        div(ng-controller="FeedCtrl")
+            div.well
+                h1 {{username}}
+                h1 Show feed {{feedName}}
+                h2(ng-If="(isOwnUser)")
+                div.well
+                    div.row
+                        div(ng-repeat="subcription in subscriptions").col-xs-2
+                            div.thumbnail
+                                img(src="http://placehold.it/300x200", alt="...")
+                                div.caption
+                                    h3 
+                                        {{subcription.name}}
+                                    h3(ng-if="(subcription.tags > 0) ? true : false") Tags
+                                        a(href="#", ng-repeat="tag in subcription.tags") {{tag.name}}
+                                    p
+                                        button(role="button", ng-if="(isOwnUser)").btn.btn-primary Edit
+                                        button(role="button", ng-if="(isOwnUser)", ng-click="deleteSubscription(feed)").btn.btn-default Delete
+                    a(href="#", ng-if="(isOwnUser)") Add/Remove subscriptions
+            div.well(ng-if="(isOwnUser)")
+                h2 Add new post
+                form(ng-submit="addPost()")
+                    textarea(rows="3", ng-model="postText").form-control
+                    .btn-group
+                        input(type="submit").btn.btn-success Post
+            div.well(ng-if="(posts.length > 0) ? true : false")
+                div.well(ng-repeat="post in posts track by $index")
+                    span Subscription Name: {{post.subscriptionName}}
+                    span Id: {{post.id}}
+                    span Author: {{post.author}}
+                    span Date Posted: {{post.date}}
+                    span Post: {{post.body}}
+                    div.well
+                        div(ng-repeat="comment in post.comments")
+                            span Id: {{comment.id}}
+                            span Author: {{comment.author}}
+                            span Date Posted: {{comment.date}}
+                            span(editable-text="comment.body", e-form="editCommentForm", onbeforesave="updateComment($data, comment.id, $parent.$parent.$index, $index)") Comment: {{comment.body}}
+                            button(ng-if="(comment.author === thisUser)", ng-click="editCommentForm.$show()", ng-hide="editCommentForm.$visible").btn.btn-default edit
+                            button(role="button", ng-if="(comment.author === thisUser)", ng-click="deleteComment(comment.id, $parent.$parent.$index, $index)").btn.btn-default Delete
+                        button(role="button", ng-click="post.showCommentForm = ! post.showCommentForm").btn.btn-default Comment
+                        div.well(ng-show="post.showCommentForm")
+                            div.row
+                                div.col-xs-12
+                                    div.input-group
+                                        span.input-group-btn
+                                            button.btn.btn-default(type="button", ng-click="addComment(post.id, post.comments, $index)") Post Comment
+                                        input.form-control(type="text", ng-model="post.commentBody")
+
+
