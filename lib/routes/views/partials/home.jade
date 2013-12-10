@@ -1,0 +1,13 @@
+div(ng-controller='HomeCtrl')
+    div.row
+        div.jumbotron  
+            h1 Welcome to Feedr aLpha
+    div.row
+        div(ng-repeat="feed in feeds").col-xs-2
+            div.thumbnail
+                img(src="http://placehold.it/300x200", alt="...")
+                div.caption
+                    h3 
+                        a(href="/{{feed.feedOwner}}/feeds/{{feed.feedName}}") {{feed.feedName}}
+                    h3(ng-if="(feed.tags > 0) ? true : false") Tags
+                        a(href="#", ng-repeat="tag in feed.tags") {{tag.name}}

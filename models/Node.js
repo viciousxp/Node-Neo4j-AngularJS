@@ -2,10 +2,12 @@
 // Description: Node Object Superclass
 
 var neo4j = require('neo4j')
+  , request = require('request')
   , config = require('../config.js')
   , database = require('../routes/database');
 
 var db = new neo4j.GraphDatabase(process.env.NEO4J_URL || config.dev.NEO4J_URL || 'http://localhost:7474');
+var neoURL = process.env.NEO4J_URL || config.dev.NEO4J_URL || 'http://localhost:7474';
 
 function Node(_node) {
     this._node = _node;
@@ -35,6 +37,18 @@ Object.defineProperties(Node.prototype, {
 Node.prototype.save = function(callback) {
     this._node.save(function (err) {
         callback(err);
+    });
+}
+
+Node.prototype.unindex = function(index, property, value, callback) {
+    request({
+        uri: neoURL + '/db/data/index/node/feeds/' + property + '/' + value + '/' + this.id,
+        method: "DELETE",
+        timeout: 10000,
+        followRedirect: false
+    }, function(err) {
+        if (err) return callback(err);
+        callback(null);
     });
 }
 
